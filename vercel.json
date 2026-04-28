@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm exec tsc && pnpm exec vite build --mode landing",
+  "outputDirectory": "dist",
+  "framework": "vite"
+}

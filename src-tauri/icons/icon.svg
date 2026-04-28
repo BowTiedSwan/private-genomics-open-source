@@ -1,0 +1,35 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(320 240) rotate(48) scale(860)">
+      <stop offset="0" stop-color="#7FB3FF" stop-opacity="0.3"/>
+      <stop offset="0.38" stop-color="#9272FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#0E1320"/>
+    </radialGradient>
+    <linearGradient id="helixA" x1="286" y1="190" x2="738" y2="826" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FB3FF"/>
+      <stop offset="1" stop-color="#8A5EFF"/>
+    </linearGradient>
+    <linearGradient id="helixB" x1="738" y1="190" x2="286" y2="826" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C58BFF"/>
+      <stop offset="1" stop-color="#40DFFF"/>
+    </linearGradient>
+    <filter id="glow" x="150" y="80" width="724" height="864" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="96" y="96" width="832" height="832" rx="224" fill="url(#bg)"/>
+  <g filter="url(#glow)">
+    <path d="M320 176C500 308 566 420 566 512C566 604 500 716 320 848" stroke="url(#helixA)" stroke-width="68" stroke-linecap="round"/>
+    <path d="M704 176C524 308 458 420 458 512C458 604 524 716 704 848" stroke="url(#helixB)" stroke-width="68" stroke-linecap="round"/>
+    <path d="M372 256H652" stroke="rgba(255,255,255,0.74)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M308 384H716" stroke="rgba(255,255,255,0.74)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M276 512H748" stroke="rgba(255,255,255,0.78)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M308 640H716" stroke="rgba(255,255,255,0.74)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M372 768H652" stroke="rgba(255,255,255,0.74)" stroke-width="30" stroke-linecap="round"/>
+  </g>
+</svg>
