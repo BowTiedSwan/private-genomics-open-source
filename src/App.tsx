@@ -8,6 +8,7 @@ import AnalyzeView from "./views/AnalyzeView";
 import ReportView from "./views/ReportView";
 import ChatView from "./views/ChatView";
 import SettingsView from "./views/SettingsView";
+import DnaHelixBackground from "./components/DnaHelixBackground";
 import "./App.css";
 
 export default function App() {
@@ -15,20 +16,16 @@ export default function App() {
     view,
     setView,
     setModels,
-    setHasApiKey,
     appendReport,
-    setReportInProgress,
     updateLastChat,
-    genome,
+    analysis,
     reportInProgress,
   } = useApp();
 
   useEffect(() => {
     api.listModels().then(setModels);
-    api.hasApiKey().then(setHasApiKey);
     const unsubReport = listen<{ delta: string; done: boolean }>("report-token", (e) => {
       if (e.payload.delta) appendReport(e.payload.delta);
-      if (e.payload.done) setReportInProgress(false);
     });
     const unsubChat = listen<{ delta: string; done: boolean }>("chat-token", (e) => {
       if (e.payload.delta) updateLastChat(e.payload.delta);
@@ -43,51 +40,56 @@ export default function App() {
     <div className="app">
       <div className="titlebar-drag" />
       <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-logo" />
-          <div>
-            <div className="brand-name">Personal Genomics</div>
-            <div className="brand-sub">Hermes · Morpheus</div>
-          </div>
+        <div className="sidebar-bg">
+          <DnaHelixBackground />
         </div>
+        <div className="sidebar-content">
+          <div className="brand">
+            <div className="brand-logo" />
+            <div>
+              <div className="brand-name">Personal Genomics</div>
+              <div className="brand-sub">Hermes · Morpheus</div>
+            </div>
+          </div>
 
-        <NavItem icon={<Upload />} active={view === "upload"} onClick={() => setView("upload")}>
-          Upload
-        </NavItem>
-        <NavItem
-          icon={reportInProgress ? <Loader2 className="spin" /> : <Dna />}
-          active={view === "analyze"}
-          onClick={() => setView("analyze")}
-          disabled={!genome}
-        >
-          Analysis
-        </NavItem>
-        <NavItem
-          icon={<FileText />}
-          active={view === "report"}
-          onClick={() => setView("report")}
-          disabled={!genome}
-        >
-          Report
-        </NavItem>
-        <NavItem
-          icon={<MessageSquare />}
-          active={view === "chat"}
-          onClick={() => setView("chat")}
-          disabled={!genome}
-        >
-          Ask Hermes
-        </NavItem>
+          <NavItem icon={<Upload />} active={view === "upload"} onClick={() => setView("upload")}>
+            Upload
+          </NavItem>
+          <NavItem
+            icon={<Dna />}
+            active={view === "analyze"}
+            onClick={() => setView("analyze")}
+            disabled={!analysis}
+          >
+            Analysis
+          </NavItem>
+          <NavItem
+            icon={reportInProgress ? <Loader2 className="spin" /> : <FileText />}
+            active={view === "report"}
+            onClick={() => setView("report")}
+            disabled={!analysis}
+          >
+            Report
+          </NavItem>
+          <NavItem
+            icon={<MessageSquare />}
+            active={view === "chat"}
+            onClick={() => setView("chat")}
+            disabled={!analysis}
+          >
+            Ask Hermes
+          </NavItem>
 
-        <div className="spacer" />
+          <div className="spacer" />
 
-        <NavItem icon={<Settings />} active={view === "settings"} onClick={() => setView("settings")}>
-          Settings
-        </NavItem>
+          <NavItem icon={<Settings />} active={view === "settings"} onClick={() => setView("settings")}>
+            Settings
+          </NavItem>
 
-        <div className="sidebar-footer">
-          Private by design. Your raw DNA never leaves your device unless you choose to send
-          redacted context to the inference endpoint.
+          <div className="sidebar-footer">
+            Private by design. Your raw DNA never leaves your device unless you choose to send
+            redacted context to the inference endpoint.
+          </div>
         </div>
       </aside>
 
@@ -119,8 +121,17 @@ function NavItem({
 }) {
   return (
     <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
       className={"nav-item " + (active ? "active" : "")}
       onClick={disabled ? undefined : onClick}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
       style={disabled ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
     >
       {icon}

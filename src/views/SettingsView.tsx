@@ -50,6 +50,9 @@ export default function SettingsView() {
           Sign in to Morpheus and create a key, then paste it here. It's stored in your macOS Keychain —
           never in plaintext config.
         </p>
+        <div className="helper" style={{ marginBottom: 12 }}>
+          To avoid macOS keychain prompts on startup, the app no longer checks for a saved key automatically when it boots.
+        </div>
 
         <div className="row" style={{ marginBottom: 12 }}>
           <button
@@ -91,7 +94,20 @@ export default function SettingsView() {
 
       <div className="card">
         <div className="toggle-row">
-          <div className={"toggle " + (teeOnly ? "on" : "")} onClick={() => setTeeOnly(!teeOnly)} role="switch" aria-checked={teeOnly} />
+          <div
+            className={"toggle " + (teeOnly ? "on" : "")}
+            onClick={() => setTeeOnly(!teeOnly)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setTeeOnly(!teeOnly);
+              }
+            }}
+            role="switch"
+            aria-checked={teeOnly}
+            aria-label="TEE-only inference"
+            tabIndex={0}
+          />
           <div style={{ flex: 1 }}>
             <h4>
               <Shield size={14} style={{ verticalAlign: "text-bottom", marginRight: 6, color: "var(--tee)" }} />

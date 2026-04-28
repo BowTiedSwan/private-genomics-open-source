@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 import { useApp } from "../store";
 import { api } from "../api";
 
 export default function ChatView() {
-  const { chat, appendChat, updateLastChat, genome, selectedModelId, hasApiKey } = useApp();
+  const { chat, appendChat, updateLastChat, analysis, selectedModelId, hasApiKey } = useApp();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,7 @@ export default function ChatView() {
     try {
       await api.chat({
         model: selectedModelId,
-        genome,
+        genome: analysis?.genome ?? null,
         history,
         message: text,
       });
@@ -63,7 +63,13 @@ export default function ChatView() {
               <div key={i} className={"chat-msg " + m.role}>
                 <small>{m.role === "user" ? "You" : "Hermes"}</small>
                 <div className="chat-bubble">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content || "…"}</ReactMarkdown>
+                  {m.content ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                  ) : (
+                    <div className="chat-thinking" aria-live="polite">
+                      <Loader2 size={14} className="spin" /> Hermes is thinking…
+                    </div>
+                  )}
                 </div>
               </div>
             ))

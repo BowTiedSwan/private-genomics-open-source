@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ChatMessage, ModelInfo, ParsedGenome } from "./types";
+import type { AnalysisPackage, ChatMessage, ModelInfo } from "./types";
 
 export type View = "upload" | "analyze" | "report" | "chat" | "settings";
 
@@ -9,9 +9,9 @@ interface AppState {
   selectedModelId: string;
   teeOnly: boolean;
   hasApiKey: boolean;
-  genome: ParsedGenome | null;
-  genomePath: string | null;
+  analysis: AnalysisPackage | null;
   report: string;
+  reportError: string | null;
   reportInProgress: boolean;
   chat: ChatMessage[];
   setView: (v: View) => void;
@@ -19,12 +19,15 @@ interface AppState {
   setSelectedModelId: (id: string) => void;
   setTeeOnly: (v: boolean) => void;
   setHasApiKey: (v: boolean) => void;
-  setGenome: (g: ParsedGenome | null, path?: string | null) => void;
+  setAnalysis: (analysis: AnalysisPackage | null) => void;
   setReport: (s: string) => void;
+  setReportError: (s: string | null) => void;
   appendReport: (s: string) => void;
   setReportInProgress: (v: boolean) => void;
   appendChat: (m: ChatMessage) => void;
   updateLastChat: (delta: string) => void;
+  clearChat: () => void;
+  clearLoadedData: () => void;
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -33,9 +36,9 @@ export const useApp = create<AppState>((set) => ({
   selectedModelId: "kimi-k2.6",
   teeOnly: false,
   hasApiKey: false,
-  genome: null,
-  genomePath: null,
+  analysis: null,
   report: "",
+  reportError: null,
   reportInProgress: false,
   chat: [],
   setView: (view) => set({ view }),
@@ -50,8 +53,9 @@ export const useApp = create<AppState>((set) => ({
       return { teeOnly };
     }),
   setHasApiKey: (hasApiKey) => set({ hasApiKey }),
-  setGenome: (genome, genomePath = null) => set({ genome, genomePath }),
+  setAnalysis: (analysis) => set({ analysis, report: analysis?.report.markdown ?? "" }),
   setReport: (report) => set({ report }),
+  setReportError: (reportError) => set({ reportError }),
   appendReport: (delta) => set((s) => ({ report: s.report + delta })),
   setReportInProgress: (reportInProgress) => set({ reportInProgress }),
   appendChat: (m) => set((s) => ({ chat: [...s.chat, m] })),
@@ -63,5 +67,14 @@ export const useApp = create<AppState>((set) => ({
         chat[chat.length - 1] = { ...last, content: last.content + delta };
       }
       return { chat };
+    }),
+  clearChat: () => set({ chat: [] }),
+  clearLoadedData: () =>
+    set({
+      analysis: null,
+      report: "",
+      reportError: null,
+      reportInProgress: false,
+      chat: [],
     }),
 }));
