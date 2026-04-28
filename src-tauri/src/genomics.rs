@@ -131,8 +131,13 @@ pub fn parse(path: &Path) -> AppResult<ParsedGenome> {
         }
         let cols: Vec<&str> = line.split('\t').collect();
         let snp = match format {
-            GenomicFormat::TwentyThreeAndMe | GenomicFormat::MyHeritage | GenomicFormat::FamilyTreeDna | GenomicFormat::RsidTsv => {
-                if cols.len() < 4 { continue; }
+            GenomicFormat::TwentyThreeAndMe
+            | GenomicFormat::MyHeritage
+            | GenomicFormat::FamilyTreeDna
+            | GenomicFormat::RsidTsv => {
+                if cols.len() < 4 {
+                    continue;
+                }
                 Snp {
                     rsid: cols[0].trim_matches('"').to_string(),
                     chromosome: normalize_chrom(cols[1].trim_matches('"')),
@@ -141,7 +146,9 @@ pub fn parse(path: &Path) -> AppResult<ParsedGenome> {
                 }
             }
             GenomicFormat::AncestryDna => {
-                if cols.len() < 5 { continue; }
+                if cols.len() < 5 {
+                    continue;
+                }
                 let a1 = cols[3].trim_matches('"');
                 let a2 = cols[4].trim_matches('"');
                 Snp {
@@ -152,7 +159,9 @@ pub fn parse(path: &Path) -> AppResult<ParsedGenome> {
                 }
             }
             GenomicFormat::Vcf => {
-                if cols.len() < 10 { continue; }
+                if cols.len() < 10 {
+                    continue;
+                }
                 let ref_a = cols[3];
                 let alt_a = cols[4];
                 let fmt = cols[8];
@@ -160,11 +169,16 @@ pub fn parse(path: &Path) -> AppResult<ParsedGenome> {
                 let gt_idx = fmt.split(':').position(|f| f == "GT").unwrap_or(0);
                 let gt_raw = sample.split(':').nth(gt_idx).unwrap_or("./.");
                 let alleles: Vec<&str> = gt_raw.split(|c| c == '|' || c == '/').collect();
-                let genotype: String = alleles.iter().map(|a| match *a {
-                    "0" => ref_a,
-                    "1" => alt_a,
-                    _ => "N",
-                }).collect::<Vec<_>>().join("").to_uppercase();
+                let genotype: String = alleles
+                    .iter()
+                    .map(|a| match *a {
+                        "0" => ref_a,
+                        "1" => alt_a,
+                        _ => "N",
+                    })
+                    .collect::<Vec<_>>()
+                    .join("")
+                    .to_uppercase();
                 Snp {
                     rsid: cols[2].to_string(),
                     chromosome: normalize_chrom(cols[0]),
@@ -197,7 +211,13 @@ pub fn parse(path: &Path) -> AppResult<ParsedGenome> {
     let mitochondrial = *chromosomes.get("MT").unwrap_or(&0);
 
     let call_rate = 1.0 - (no_calls as f64 / snps.len() as f64);
-    let sex_inference = if y_chromosome > 100 { "XY (male)".into() } else if x_chromosome > 0 { "XX (female)".into() } else { "unknown".into() };
+    let sex_inference = if y_chromosome > 100 {
+        "XY (male)".into()
+    } else if x_chromosome > 0 {
+        "XX (female)".into()
+    } else {
+        "unknown".into()
+    };
 
     let matched_markers = match_known_markers(&snps);
     let sample_snps: Vec<Snp> = snps.iter().take(20).cloned().collect();

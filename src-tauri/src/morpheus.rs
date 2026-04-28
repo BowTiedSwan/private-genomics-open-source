@@ -84,7 +84,10 @@ pub async fn chat_once(api_key: &str, req: &ChatRequest) -> AppResult<String> {
         .post(format!("{}/chat/completions", MORPHEUS_BASE))
         .bearer_auth(api_key)
         .header("Content-Type", "application/json")
-        .json(&ChatRequest { stream: false, ..req.clone() })
+        .json(&ChatRequest {
+            stream: false,
+            ..req.clone()
+        })
         .send()
         .await?;
     if !resp.status().is_success() {
@@ -143,14 +146,25 @@ pub async fn chat_stream(
             let line = line.trim_end_matches('\r');
             if let Some(data) = line.strip_prefix("data: ") {
                 if data.trim() == "[DONE]" {
+                    if full.trim().is_empty() {
+                        let fallback = chat_once(
+                            api_key,
+                            &ChatRequest {
+                                stream: false,
+                                ..req.clone()
+                            },
+                        )
+                        .await?;
+                        if !fallback.is_empty() {
+                            let _ = app.emit(event, json!({"delta": fallback, "done": false}));
+                            full.push_str(&fallback);
+                        }
+                    }
                     let _ = app.emit(event, json!({"delta": "", "done": true}));
                     return Ok(full);
                 }
                 if let Ok(v) = serde_json::from_str::<Value>(data) {
-                    if let Some(delta) = v
-                        .pointer("/choices/0/delta/content")
-                        .and_then(|c| c.as_str())
-                    {
+                    if let Some(delta) = extract_stream_text(&v) {
                         full.push_str(delta);
                         let _ = app.emit(event, json!({"delta": delta, "done": false}));
                     }
@@ -158,6 +172,34 @@ pub async fn chat_stream(
             }
         }
     }
+    if full.trim().is_empty() {
+        let fallback = chat_once(
+            api_key,
+            &ChatRequest {
+                stream: false,
+                ..req.clone()
+            },
+        )
+        .await?;
+        if !fallback.is_empty() {
+            let _ = app.emit(event, json!({"delta": fallback, "done": false}));
+            full.push_str(&fallback);
+        }
+    }
     let _ = app.emit(event, json!({"delta": "", "done": true}));
     Ok(full)
+}
+
+fn extract_stream_text<'a>(v: &'a Value) -> Option<&'a str> {
+    v.pointer("/choices/0/delta/content")
+        .and_then(|c| c.as_str())
+        .or_else(|| {
+            v.pointer("/choices/0/message/content")
+                .and_then(|c| c.as_str())
+        })
+        .or_else(|| v.pointer("/choices/0/text").and_then(|c| c.as_str()))
+        .or_else(|| {
+            v.pointer("/choices/0/delta/content/0/text")
+                .and_then(|c| c.as_str())
+        })
 }

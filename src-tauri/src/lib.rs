@@ -1,12 +1,19 @@
+mod analysis;
 mod error;
+mod exports;
 mod genomics;
 mod hermes;
+mod local_analysis;
 mod markers;
+mod medication_checker;
 mod morpheus;
+mod pdf_export;
 mod settings;
 
+use analysis::AnalysisPackage;
 use error::AppResult;
 use genomics::ParsedGenome;
+use medication_checker::MedicationCheckResponse;
 use morpheus::{ChatMessage, ModelInfo};
 use std::path::PathBuf;
 use tauri::AppHandle;
@@ -17,8 +24,46 @@ fn list_models() -> Vec<ModelInfo> {
 }
 
 #[tauri::command]
-fn parse_genome(path: String) -> AppResult<ParsedGenome> {
-    genomics::parse(&PathBuf::from(path))
+fn create_analysis(app: AppHandle, path: String) -> AppResult<AnalysisPackage> {
+    let path_buf = PathBuf::from(&path);
+    let genome = genomics::parse(&path_buf)?;
+    analysis::create(&app, &path_buf, genome)
+}
+
+#[tauri::command]
+fn load_analysis(app: AppHandle, analysis_id: String) -> AppResult<AnalysisPackage> {
+    analysis::load(&app, &analysis_id)
+}
+
+#[tauri::command]
+fn export_analysis_formats(app: AppHandle, analysis_id: String) -> AppResult<AnalysisPackage> {
+    let mut analysis = analysis::load(&app, &analysis_id)?;
+    exports::export_all(&mut analysis)?;
+    Ok(analysis)
+}
+
+#[tauri::command]
+fn export_pdf(
+    app: AppHandle,
+    analysis_id: String,
+    output_path: String,
+) -> AppResult<AnalysisPackage> {
+    let mut analysis = analysis::load(&app, &analysis_id)?;
+    pdf_export::export_pdf(&mut analysis, &output_path)?;
+    Ok(analysis)
+}
+
+#[tauri::command]
+fn check_medication_interactions(
+    app: AppHandle,
+    analysis_id: String,
+    medications: Vec<String>,
+) -> AppResult<MedicationCheckResponse> {
+    let analysis = analysis::load(&app, &analysis_id)?;
+    Ok(medication_checker::check_medications(
+        &analysis,
+        medications,
+    ))
 }
 
 #[tauri::command]
@@ -39,11 +84,23 @@ fn clear_api_key() -> AppResult<()> {
 #[tauri::command]
 async fn generate_report(
     app: AppHandle,
-    genome: ParsedGenome,
+    analysis_id: String,
     model: String,
+) -> AppResult<AnalysisPackage> {
+    let api_key = settings::load_api_key()?.ok_or(error::AppError::MissingApiKey)?;
+    let analysis = analysis::load(&app, &analysis_id)?;
+    let report = hermes::generate_report(&app, &api_key, &model, &analysis, "report-token").await?;
+    analysis::save_report(&app, &analysis_id, report, model)
+}
+
+#[tauri::command]
+async fn explain_marker(
+    model: String,
+    genome: Option<ParsedGenome>,
+    finding: String,
 ) -> AppResult<String> {
     let api_key = settings::load_api_key()?.ok_or(error::AppError::MissingApiKey)?;
-    hermes::generate_report(&app, &api_key, &model, &genome, "report-token").await
+    hermes::explain_marker(&api_key, &model, genome.as_ref(), &finding).await
 }
 
 #[tauri::command]
@@ -76,11 +133,16 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             list_models,
-            parse_genome,
+            create_analysis,
+            load_analysis,
+            export_analysis_formats,
+            export_pdf,
+            check_medication_interactions,
             save_api_key,
             has_api_key,
             clear_api_key,
             generate_report,
+            explain_marker,
             chat,
         ])
         .run(tauri::generate_context!())
