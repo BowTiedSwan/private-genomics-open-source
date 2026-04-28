@@ -5,7 +5,7 @@ import appIconUrl from "../../src-tauri/icons/icon.svg?url";
 import { initAnalytics, trackAction } from "../analytics";
 import "./landing.css";
 
-const OPEN_SOURCE_REPO_URL = "https://github.com/BowTiedSwan/private-genomics";
+const OPEN_SOURCE_REPO_URL = "https://github.com/BowTiedSwan/private-genomics-open-source";
 const MORPHEUS_URL =
   "https://mor.org/inference-api?utm_source=private_genomics_website&utm_medium=referral&utm_campaign=powered_by_morpheus_inference&utm_content=landing_page";
 
